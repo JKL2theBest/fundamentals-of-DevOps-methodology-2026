@@ -1,0 +1,50 @@
+services:
+  web:
+    build:
+      # Явно указываем контекст сборки и используемый Dockerfile.
+      context: .
+      dockerfile: Dockerfile.good
+    # Добавляем политику перезапуска.
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    environment:
+      # Используем переменные окружения из .env файла.
+      - DB_HOST=db
+      - DB_USER=${POSTGRES_USER}
+      - DB_PASSWORD=${POSTGRES_PASSWORD}
+    # depends_on с условием service_healthy гарантирует.
+    depends_on:
+      db:
+        condition: service_healthy
+    healthcheck:
+      # Проверяем, что веб-сервис отвечает на HTTP-запросы.
+      test: ["CMD", "curl", "-f", "http://localhost:8000/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 5s # Даем контейнеру 5 секунд на запуск перед началом проверок.
+
+  db:
+    # Используем конкретную и минималистичную версию образа.
+    image: postgres:18-alpine
+    restart: unless-stopped
+    environment:
+      # данные из .env файла.
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - POSTGRES_DB=${POSTGRES_DB}
+    volumes:
+      # Используем именованный том (named volume) для персистентного хранения данных.
+      - postgres_data:/var/lib/postgresql/data
+    # Порт базы данных не публикуется наружу, доступ к нему есть только изнутри сети Docker.
+    healthcheck:
+      # Проверяем, что сервер PostgreSQL готов принимать подключения.
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+# Явно объявляем все именованные тома в секции верхнего уровня.
+volumes:
+  postgres_data:

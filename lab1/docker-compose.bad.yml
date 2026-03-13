@@ -1,0 +1,35 @@
+version: '3.8'
+
+services:
+  web:
+    # Если в проекте несколько, использование
+    # build: .
+    # может привести к тому, что Docker Compose возьмёт не тот Dockerfile, который ожидался
+    build:
+      context: .
+      dockerfile: Dockerfile.bad
+    #  Жестко заданное имя контейнера.
+    container_name: my_bad_flask_app
+    ports:
+      - "3000:8000" # Несоответствие портов может усложнить понимание конфигурации и отладку.
+    environment:
+      # Хардкод переменных окружения.
+      FLASK_ENV: development
+    # Простой depends_on гарантирует только порядок запуска, но не готовность
+    # базы данных к приему подключений.
+    depends_on:
+      - db
+
+  db:
+    # Использование тега "latest" делает сборку невоспроизводимой.
+    image: postgres:latest
+    container_name: my_bad_db
+    environment:
+      # Хардкод секретов.
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: admin
+      POSTGRES_DB: appdb
+    # Отсутствие volumes.
+    # Публикация порта БД наружу без необходимости, что создает риски безопасности.
+    ports:
+      - "5432:5432"
