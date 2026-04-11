@@ -39,9 +39,11 @@ kubectl apply -f k8s/
 ```
 
 *Скриншот:*
-![Поды K8s](./1.kubectl_apply_get_service.png)
+
+![Поды K8s](./screenshots/1.kubectl_apply_get_service.png)
 
 *Скриншот:*
+
 ![Браузер K8s](./screenshots/2.xaIOxau_kubernetes.png)
 
 ---
@@ -56,9 +58,11 @@ kubectl apply -f k8s/
 helm install my-release ./my-chart
 ```
 *Скриншот установки релиза:*
+
 ![Helm Install](./screenshots/3.helm_install_kubectl_get_minikube_service.png)
 
 *Скриншот приложения до апгрейда:*
+
 ![Helm Browser V1](./screenshots/4.xaIOxau_helm_chart.png)
 
 ---
@@ -87,9 +91,11 @@ annotations:
 Благодаря этому, при любом изменении `message` в `values.yaml`, меняется хэш в шаблоне Deployment, что триггерит автоматический Rolling Update подов без простоя (downtime).
 
 *Скриншот апгрейда:*
+
 ![Helm Upgrade](./screenshots/5.helm_upgrade_etc.png)
 
 *Скриншот приложения после апгрейда:*
+
 ![Helm Browser V2](./screenshots/6.LLIOK.png)
 
 ---
