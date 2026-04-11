@@ -1,0 +1,27 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: flask-deployment
+spec:
+  replicas: 2 # Запускаем сразу 2 пода (контейнера) для надежности
+  selector:
+    matchLabels:
+      app: my-flask
+  template:
+    metadata:
+      labels:
+        app: my-flask
+    spec:
+      containers:
+        - name: flask-container
+          image: my-flask-app:1.0
+          # говорим куберу не пытаться качать образ из интернета, а брать локальный
+          imagePullPolicy: Never 
+          ports:
+            - containerPort: 8000
+          env:
+            - name: APP_MESSAGE
+              valueFrom:
+                configMapKeyRef:
+                  name: flask-config
+                  key: APP_MESSAGE

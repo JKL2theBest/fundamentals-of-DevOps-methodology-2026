@@ -1,0 +1,6 @@
+apiVersion: v2
+name: my-flask-chart
+description: Мой первый Helm чарт :D
+type: application
+version: 0.1.0
+appVersion: "1.0"
