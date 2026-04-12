@@ -220,3 +220,6 @@ dist
 dist-ssr
 *.local
 
+*.crt
+*.key
+*.pem
