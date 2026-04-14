@@ -19,11 +19,3 @@ services:
     depends_on:
       - app1
       - app2
-
-networks:
-  internal:
-    driver: bridge
-
-services:
-  nginx:
-    networks: [internal]
