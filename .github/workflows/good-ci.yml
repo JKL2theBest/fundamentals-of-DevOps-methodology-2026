@@ -4,7 +4,7 @@ name: GOOD Pipeline
 on:
   push:
     branches: [main]
-    paths-ignore: ['**.md']
+    paths-ignore: ['**.md', '**.png']
 
 # Best Practice: Ограничение параллельных запусков (если пушим быстро 2 раза, старый отменится)
 concurrency:
