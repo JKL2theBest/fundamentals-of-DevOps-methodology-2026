@@ -14,6 +14,8 @@
 
 ### "Плохой" пайплайн
 
+[В корне репозитория](https://github.com/JKL2theBest/fundamentals-of-DevOps-methodology-2026/blob/main/.github/workflows/bad-ci.yml)
+
 Собрал все типичные ошибки:
 
 1. **Деплой любой ценой (`if: always()`)**
@@ -35,6 +37,8 @@
 5. **Прочее:** Нет кэширования `pip`, слишком широкие права у токена, триггер на любое изменение (даже в `README`).
 
 ### "Хороший" пайплайн
+
+[Там же](https://github.com/JKL2theBest/fundamentals-of-DevOps-methodology-2026/blob/main/.github/workflows/good-ci.yml)
 
 Здесь я всё исправил:
 
