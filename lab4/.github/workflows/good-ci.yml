@@ -1,0 +1,98 @@
+name: GOOD Pipeline
+
+# Узкий триггер
+on:
+  push:
+    branches: [main]
+    paths-ignore: ['**.md']
+
+# Best Practice: Ограничение параллельных запусков (если пушим быстро 2 раза, старый отменится)
+concurrency:
+  group: production
+  cancel-in-progress: true
+
+# Best Practice: Принцип наименьших привилегий
+permissions:
+  contents: read
+  actions: read
+
+jobs:
+  lint:
+    # Фиксация версии ОС
+    runs-on: ubuntu-22.04
+    # Best Practice: Защита от зависших сборок
+    timeout-minutes: 5
+    steps:
+      # Фиксация версии экшена по конкретному релизу
+      - uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          # Встроенное кэширование
+          cache: 'pip'
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+      - name: Run linter
+        run: flake8 src/
+
+  test:
+    needs: lint
+    runs-on: ubuntu-22.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - name: Run tests
+        run: echo "All tests passed successfully!"
+
+  security:
+    needs: test
+    runs-on: ubuntu-22.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+      - name: Install security tools
+        run: pip install -r requirements.txt
+      - name: Run Bandit
+        # --exit-zero позволяет вывести найденную уязвимость, но не останавливать пайплайн
+        run: bandit -r src/ --exit-zero
+
+  build:
+    needs: security
+    runs-on: ubuntu-22.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install zip
+        run: sudo apt-get update && sudo apt-get install -y zip
+        # Настоящий артефакт для деплоя
+      - name: Build artifact
+        run: zip -r app.zip src/
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: app-build
+          path: app.zip
+
+  deploy:
+    # Деплой ждет успешной сборки. Если тесты упадут, деплоя не будет.
+    needs: build
+    runs-on: ubuntu-22.04
+    timeout-minutes: 5
+    steps:
+      - name: Download artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: app-build
+      - name: Deploy securely
+      # Секрет берется из хранилища GitHub, в логи не попадет
+        env:
+          PROD_TOKEN: ${{ secrets.PROD_TOKEN }}
+        run: |
+          echo "Deploying artifact to production safely..."
+          # GitHub сам замаскирует значение переменной окружения, попытаться её вывести

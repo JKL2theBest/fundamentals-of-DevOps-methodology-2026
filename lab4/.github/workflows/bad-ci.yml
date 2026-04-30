@@ -1,0 +1,33 @@
+name: BAD Pipeline
+
+# Слишком широкий триггер (запустится даже при смене README)
+on: [push, pull_request]
+
+jobs:
+  build_and_deploy:
+    # тег latest - не надо
+    runs-on: ubuntu-latest
+    steps:
+      # тег экшена (main/master) - уязвимость к атакам на цепочку поставок
+      - uses: actions/checkout@master
+      
+      - name: Install dependencies
+        # Нет кэширования, каждый раз качаем заново
+        run: pip install flake8 bandit
+
+      - name: Run checks
+        run: |
+          echo "Running tests..."
+          flake8 src/
+          bandit -r src/
+          echo "Oops, tests failed!"
+          exit 1 # Намеренно роняем пайплайн!
+
+      # Выполнение деплоя даже если тесты или линтер упали (если: always())
+      - name: Deploy to Production
+        if: always()
+        run: |
+          echo "Deploying..."
+          # Секреты прямо в коде и выводятся в логи (не надо так🙄)
+          SECRET_TOKEN="super-secret-hardcoded-token-123"
+          echo "Using token: $SECRET_TOKEN"
