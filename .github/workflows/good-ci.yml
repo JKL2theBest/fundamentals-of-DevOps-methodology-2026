@@ -31,8 +31,9 @@ jobs:
           python-version: '3.11'
           # Встроенное кэширование
           cache: 'pip'
+          cache-dependency-path: 'lab4/requirements.txt'
       - name: Install dependencies
-        run: pip install -r requirements.txt
+        run: pip install -r lab4/requirements.txt
       - name: Run linter
         run: flake8 lab4/src/
 
@@ -56,8 +57,9 @@ jobs:
         with:
           python-version: '3.11'
           cache: 'pip'
+          cache-dependency-path: 'lab4/requirements.txt'
       - name: Install security tools
-        run: pip install -r requirements.txt
+        run: pip install -r lab4/requirements.txt
       - name: Run Bandit
         # --exit-zero позволяет вывести найденную уязвимость, но не останавливать пайплайн
         run: bandit -r lab4/src/ --exit-zero
@@ -95,4 +97,4 @@ jobs:
           PROD_TOKEN: ${{ secrets.PROD_TOKEN }}
         run: |
           echo "Deploying artifact to production safely..."
-          # GitHub сам замаскирует значение переменной окружения, попытаться её вывести
+          # GitHub сам замаскирует значение переменной окружения, если попытаться её вывести
