@@ -34,7 +34,7 @@ jobs:
       - name: Install dependencies
         run: pip install -r requirements.txt
       - name: Run linter
-        run: flake8 src/
+        run: flake8 lab4/src/
 
   test:
     needs: lint
@@ -60,7 +60,7 @@ jobs:
         run: pip install -r requirements.txt
       - name: Run Bandit
         # --exit-zero позволяет вывести найденную уязвимость, но не останавливать пайплайн
-        run: bandit -r src/ --exit-zero
+        run: bandit -r lab4/src/ --exit-zero
 
   build:
     needs: security
@@ -72,7 +72,7 @@ jobs:
         run: sudo apt-get update && sudo apt-get install -y zip
         # Настоящий артефакт для деплоя
       - name: Build artifact
-        run: zip -r app.zip src/
+        run: zip -r app.zip lab4/src/
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
