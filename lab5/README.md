@@ -1,4 +1,4 @@
-# 5 Лабораторная (Базовая) черновик
+# 5 Лабораторная (Мониторинг)
 
 Выполнил:
 
@@ -31,11 +31,15 @@ helm repo add prometheus-community https://prometheus-community.github.io/helm-c
 helm repo update
 ```
 
+*Добавление репозитория:*
+
 ![prometheus-community](./screenshots/1.minikube_helm.png)
 
 ```bash
 helm install monitoring prometheus-community/kube-prometheus-stack
 ```
+
+*Установка стека:*
 
 ![kube-prometheus-stack](./screenshots/2.helm_install.png)
 
@@ -43,89 +47,105 @@ helm install monitoring prometheus-community/kube-prometheus-stack
 
 Чтобы Prometheus узнал о существовании моего приложения, я не стал править конфиги Прометеуса вручную (это антипаттерн). Вместо этого реализовал манифест `ServiceMonitor`. 
 
-Это Custom Resource Definition (CRD), который динамически сообщает оператору Prometheus: *"Иди к подам с lable `app: flask-monitor` на порт 8000 и собирай метрики, чел"*.
+Это Custom Resource Definition (CRD), который динамически сообщает оператору Prometheus: *"Иди к сервису с label `app: flask-monitor` и собирай метрики, чел"*.
 
-# Собираем образ внутри миникуба
+### 4. Сборка и Деплой
+
+Собираем образ внутри миникуба (чтобы k8s не пытался скачать его из интернета):
 
 ```bash
 minikube image build -t my-flask-app:3.0 .
 ```
 
-![CLI Setup](./screenshots/3.1.minikube_image_build.png)
+![Image Build](./screenshots/3.1.minikube_image_build.png)
 
-# Деплоим приложение и ServiceMonitor
+Деплоим манифесты приложения:
 
 ```bash
 kubectl apply -f k8s/app.yaml
 ```
 
-![CLI Setup](./screenshots/3.2.kubectl_apply.png)
+![Kubectl Apply](./screenshots/3.2.kubectl_apply.png)
+
+Проверяем поды и открываем туннель к приложению:
 
 ```bash
 kubectl get pods
-
 minikube service flask-svc
 ```
 
-![CLI Setup](./screenshots/4.pods_service.png)
+![Pods and Service](./screenshots/4.pods_service.png)
+
+Прокидываем порт к Grafana на `localhost:8080`:
 
 ```bash
 kubectl port-forward svc/monitoring-grafana 8080:80
 ```
 
-![CLI Setup](./screenshots/5.port-forward.png)
+![Port Forward](./screenshots/5.port-forward.png)
 
 ---
 
-## Графаня
+## Вход в Графиню
 
-http://localhost:8080
+Панель Grafana доступна по адресу `http://localhost:8080`.
 
-Логин: admin
-Пароль:
+* Логин по умолчанию: `admin`
+* Пароль генерируется автоматически при установке Helm-чарта.
+
+*(Примечание: пароль можно было задать при установке через `--set grafana.adminPassword=...`, но уже было поздно...).*
+
+Чтобы узнать пароль, я посмотрел секреты кластера и вытащил нужный в формате json:
 
 ```bash
 kubectl get secrets -A
+kubectl get secret monitoring-grafana -o jsonpath="{.data.admin-password}"
 ```
 
-```bash
-kubectl get secret monitoring-grafana -o jsonpath="{.data.admin-password}" # | base64 -d (linux)
-```
+*Поиск секрета:*
 
-![CLI](./screenshots/6.1.nahojdenie_passworda.png)
+![Secret Search](./screenshots/6.1.nahojdenie_passworda.png)
 
-![CLI](./screenshots/6.2.cyberchef.org.png)
+Так как стандартная консоль Windows не поддерживает линуксовую команду `base64 -d`, я скопировал закодированное значение и расшифровал его с помощью **CyberChef** (кибер-повар😁):
 
-![CLI](./screenshots/7.grafana_login.png)
+*Декодирование Base64 в CyberChef:*
 
-(можно ли было задать пароль в начале? ...)
+![CyberChef](./screenshots/6.2.cyberchef.org.png)
+
+*Окно входа в Графаню:*
+
+![Grafana Login](./screenshots/7.grafana_login.png)
 
 ---
 
 ## Результаты (Графики Графани)
 
-После деплоя я пробросил порт к Grafana (`kubectl port-forward svc/monitoring-grafana 8080:80`) и сгенерировал искусственную нагрузку на приложение:
+Для проверки мониторинга я сгенерировал нагрузку на приложение:
 
-```bash
+```cmd
 for /L %i in (1,1,100) do curl -s "http://127.0.0.1:48591/" >nul & curl -s "http://127.0.0.1:48591/error" >nul
 ```
 
 ### График 1: Состояние системы (Инфраструктурный мониторинг)
 
-`kube-prometheus-stack` автоматически создает дашборды для мониторинга железа и подов Kubernetes. Ниже представлен график ...
+`kube-prometheus-stack` автоматически создает дашборды для мониторинга железа и компонентов k8s. Ниже представлен стандартный график `Prometheus / Overview`, отражающий сбор метрик с таргетов.
 
-*Скриншот системных ...:*
-![...](./screenshots/8.prometheus_overview.png)
+*Скриншот системных метрик:*
+
+![Prometheus Overview](./screenshots/8.prometheus_overview.png)
 
 ### График 2: Состояние приложения (Продуктовый мониторинг)
 
 Я создал кастомный Dashboard, чтобы отслеживать метрики конкретно моего приложения. 
 
-PromQL запрос: `flask_http_request_total`. На графике наглядно видно распределение входящих запросов. Красная и синяя линии - это те самые 500-е ошибки, вызванные моими обращениями к маршруту `/error`, а зеленая и оранжевая - успешные запросы.......
+PromQL запрос: `flask_http_request_total`. На графике видно распределение входящих запросов. 
 
-![...](./screenshots/9.new_dashboard.png)
+**Важный нюанс:** На графике видно 4 линии. Это произошло потому, что у нас работает **2 пода (реплики)**, и каждый из них отдает по **2 статуса** (200 OK и 500 Error). Nginx/Kubernetes балансирует нагрузку между подами, поэтому графики растут равномерно.
+
+*Настройка кастомного запроса:*
+
+![New Dashboard](./screenshots/9.new_dashboard.png)
 
 *Скриншот продуктовых метрик (Flask App):*
-![App Metrics](./screenshots/10.flask_requests.png)
 
-### фсё
+![App Metrics](./screenshots/10.flask_requests.png)
