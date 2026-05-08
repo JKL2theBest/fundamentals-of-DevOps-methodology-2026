@@ -1,4 +1,4 @@
-# 5 Лабораторная (Мониторинг)
+# 5 Лабораторная (Базовая. звездочка не удалась)
 
 Выполнил:
 
@@ -160,7 +160,8 @@ PromQL запрос: `flask_http_request_total`. На графике видно 
 
 Я написал Kubernetes-манифест `PrometheusRule`, который описывает логику срабатывания: если скорость 500-х ошибок превышает определенный порог, Prometheus должен зажечь алерт `HighErrorRate`.
 
-...
+Применил правило в кластер:
+
 ```bash
 kubectl apply -f k8s/alert-rule.yaml
 ```
@@ -197,14 +198,19 @@ alertmanager:
         parse_mode: HTML
 ```
 
-...
+Обновил Helm-релиз стека мониторинга:
+
 ```bash
 helm upgrade monitoring prometheus-community/kube-prometheus-stack -f alertmanager-values.yaml
 ```
 
-...
+Для проверки и тестирования системы алертинга:
+
 ```bash
 kubectl port-forward svc/monitoring-kube-prometheus-prometheus 9090:9090
+```
+
+```bash
 kubectl port-forward svc/monitoring-kube-prometheus-alertmanager 9093:9093
 ```
 
