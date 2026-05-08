@@ -1,0 +1,19 @@
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: flask-errors-rule
+  labels:
+    release: monitoring 
+spec:
+  groups:
+    - name: flask.rules
+      rules:
+        - alert: HighErrorRate
+          # Если за последнюю минуту было больше 0.5 ошибок в секунду
+          expr: rate(flask_http_request_total{status="500"}[1m]) > 0.5
+          for: 10s # Ждем 10 секунд перед тем как алертить
+          labels:
+            severity: critical
+          annotations:
+            summary: "🔥 Падаем! АХТУНГ! Слишком много 500-х ошибок!"
+            description: "Flask-приложение генерирует ошибки. Текущий рейт: {{ $value }} ошибок/сек."

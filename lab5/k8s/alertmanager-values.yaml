@@ -1,0 +1,28 @@
+# Этот манимест не удался...
+alertmanager:
+  alertmanagerSpec:
+    useExistingSecret: false
+    storage: {}
+  config:
+    global:
+      smtp_smarthost: 'smtp.gmail.com:587'
+      smtp_from: 'muhammet.jkl2.suhanguylev@gmail.com'
+      smtp_auth_username: 'muhammet.jkl2.suhanguylev@gmail.com'
+      smtp_auth_password: 'giqtgssoazhgbpf'
+      smtp_require_tls: true
+    route:
+      group_by: ['alertname']
+      group_wait: 5s
+      group_interval: 5s
+      repeat_interval: 1h
+      receiver: 'gmail-notifications'
+      routes:
+        - matchers:
+            - alertname = Watchdog
+          receiver: 'null'
+    receivers:
+    - name: 'gmail-notifications'
+      email_configs:
+      - to: 'muhammet.jkl2.suhanguylev@gmail.com'
+        send_resolved: true
+    - name: 'null'
